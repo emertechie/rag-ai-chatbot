@@ -1,7 +1,30 @@
+# RAG AI Chatbot
+
+This is a forked and customized version of the excellent [vercel/ai-chatbot](https://github.com/vercel/ai-chatbot) repo.
+
+It extends the original chatbot with support for RAG (Retrieval-Augmented Generation). Changes include:
+
+* CLI-based document indexer with support for file system and llms.txt-based indexing. Full source in the [`/indexer`](https://github.com/emertechie/rag-ai-chatbot/tree/main/indexer) folder.
+* Database migrations and query support for indexed documents and their chunked encodings
+* A custom AI tool to enable the chatbot to search knowledge in the database tables
+* A customized system prompt to ensure the chatbot only uses knowledge from the database to reply, to avoid hallucinations
+* A custom UI component to display information sources
+* Instrumentation integration with [Langfuse](https://langfuse.com/)
+
+I also included, as a reference, the main [prompts](https://github.com/emertechie/rag-ai-chatbot/tree/main/.prompts) I used in Cursor to generate the changes. These make use of the [snarktank/ai-dev-tasks](https://github.com/snarktank/ai-dev-tasks) repo to help create PRDs and task lists.
+
+Full diff of my changes available [here](https://github.com/vercel/ai-chatbot/compare/main...emertechie:rag-ai-chatbot:main).
+
+Original Chat SDK Readme content below.
+
+<hr>
+
+<!--
 <a href="https://chat.vercel.ai/">
   <img alt="Next.js 14 and App Router-ready AI chatbot." src="app/(chat)/opengraph-image.png">
   <h1 align="center">Chat SDK</h1>
 </a>
+-->
 
 <p align="center">
     Chat SDK is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
