@@ -9,7 +9,7 @@ export interface URLOptions extends DataSourceOptions {
   maxDepth?: number;
   /** Domains to restrict crawling to (future feature) */
   allowedDomains?: string[];
-  /** Number of concurrent downloads (default: 5) */
+  /** Number of concurrent downloads (default: 4) */
   concurrency?: number;
   /** Delay between requests in milliseconds (default: 250) */
   delay?: number;
@@ -28,8 +28,8 @@ export class URLDataSource extends DataSource {
     super('url');
     this.url = options.url;
     this.options = options;
-    this.concurrency = options.concurrency ?? 5;
-    this.delay = options.delay ?? 500;
+    this.concurrency = options.concurrency ?? 4;
+    this.delay = options.delay ?? 250;
     this.maxFiles = options.maxFiles;
   }
 
@@ -58,32 +58,7 @@ export class URLDataSource extends DataSource {
       }
       
       const llmsTxtContent = await response.text();
-      
-      // Parse the llms.txt content
-      const parsedContent = parseLLMsTxt(llmsTxtContent);
-      
-      // Collect all markdown links from all sections
-      const markdownLinks: Array<{ url: string; title: string; sectionName: string; desc?: string }> = [];
-      
-      // Iterate through parsed sections and links
-      for (const [sectionName, links] of Object.entries(parsedContent.sections)) {
-        for (const link of links) {
-          // Skip if link is undefined or missing required properties
-          if (!link || !link.url || !link.title) {
-            continue;
-          }
-          
-          // Filter for markdown files (.md or .mdx)
-          if (link.url.endsWith('.md') || link.url.endsWith('.mdx')) {
-            markdownLinks.push({
-              url: link.url,
-              title: link.title,
-              sectionName,
-              desc: link.desc
-            });
-          }
-        }
-      }
+      const markdownLinks = this.getAllMarkdownLinks(llmsTxtContent);
 
       // Limit the number of files to process if maxFiles is set
       const filesToProcess = this.maxFiles
@@ -94,46 +69,59 @@ export class URLDataSource extends DataSource {
         console.log(`Limiting processing to ${this.maxFiles} files out of ${markdownLinks.length} found markdown files`);
       }
 
-      // Download markdown files with concurrency control and yield results
-      const downloadPromises: Promise<IndexableDocument | null>[] = [];
-      let activeDownloads = 0;
-
+      // Download markdown files one by one with delay and yield results immediately
       for (const markdownLink of filesToProcess) {
-        // Wait if we've reached the concurrency limit
-        while (activeDownloads >= this.concurrency) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-
-        // Start download and track the promise
-        activeDownloads++;
-        const downloadPromise = this.downloadMarkdownFile(markdownLink).finally(() => {
-          activeDownloads--;
-        });
-        
-        downloadPromises.push(downloadPromise);
-
-        // Add delay between starting downloads
-        await new Promise(resolve => setTimeout(resolve, this.delay));
-      }
-
-      // Yield documents as they complete
-      for (const downloadPromise of downloadPromises) {
         try {
-          const result = await downloadPromise;
+          console.log(`⬇️ Downloading ${markdownLink.url}`);
+          const result = await this.downloadMarkdownFile(markdownLink);
           if (result) {
             yield result;
           }
+
+          // Add simple delay to avoid overloading the server
+          await new Promise(resolve => setTimeout(resolve, this.delay));
         } catch (error) {
-          // Error handling is already done in downloadMarkdownFile
-          // Individual file failures don't stop the entire process
-          console.error('Download failed:', error);
+          console.error(`Download failed for ${markdownLink.url}:`, error);
+          // Continue with the next file even if this one failed
         }
       }
-      
     } catch (error) {
       console.error(`Error fetching or parsing llms.txt from ${this.url}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Get all markdown links from the llms.txt content
+   */
+  private getAllMarkdownLinks(llmsTxtContent: string): Array<{ url: string; title: string; sectionName: string; desc?: string }> {
+    // Parse the llms.txt content
+    const parsedContent = parseLLMsTxt(llmsTxtContent);
+          
+    // Collect all markdown links from all sections
+    const markdownLinks: Array<{ url: string; title: string; sectionName: string; desc?: string }> = [];
+
+    // Iterate through parsed sections and links
+    for (const [sectionName, links] of Object.entries(parsedContent.sections)) {
+      for (const link of links) {
+        // Skip if link is undefined or missing required properties
+        if (!link || !link.url || !link.title) {
+          continue;
+        }
+        
+        // Filter for markdown files (.md or .mdx)
+        if (link.url.endsWith('.md') || link.url.endsWith('.mdx')) {
+          markdownLinks.push({
+            url: link.url,
+            title: link.title,
+            sectionName,
+            desc: link.desc
+          });
+        }
+      }
+    }
+
+    return markdownLinks;
   }
 
   /**
