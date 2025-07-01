@@ -9,8 +9,6 @@ export interface URLOptions extends DataSourceOptions {
   maxDepth?: number;
   /** Domains to restrict crawling to (future feature) */
   allowedDomains?: string[];
-  /** Number of concurrent downloads (default: 4) */
-  concurrency?: number;
   /** Delay between requests in milliseconds (default: 250) */
   delay?: number;
   /** Maximum number of files to process (default: undefined - process all files) */
@@ -20,7 +18,6 @@ export interface URLOptions extends DataSourceOptions {
 export class URLDataSource extends DataSource {
   private url: string;
   private options: URLOptions;
-  private concurrency: number;
   private delay: number;
   private maxFiles?: number;
 
@@ -28,7 +25,6 @@ export class URLDataSource extends DataSource {
     super('url');
     this.url = options.url;
     this.options = options;
-    this.concurrency = options.concurrency ?? 4;
     this.delay = options.delay ?? 250;
     this.maxFiles = options.maxFiles;
   }
