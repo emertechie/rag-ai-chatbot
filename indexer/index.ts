@@ -176,10 +176,8 @@ async function indexDataSource(dataSource: DataSource): Promise<void> {
       return;
     }
 
-    // Handle deletion of documents that no longer exist (for file system sources)
-    if (dataSource.getSourceType() === 'file') {
-      await handleDocumentDeletion(dataSource.getSourceType(), discoveredUris);
-    }
+    // Handle deletion of documents that no longer exist
+    await handleDocumentDeletion(dataSource.getSourceType(), discoveredUris);
 
     console.log(`✅ Indexing completed!`);
     console.log(`   📄 Total found: ${totalDocuments} documents`);
