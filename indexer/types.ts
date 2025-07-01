@@ -1,10 +1,12 @@
 // Data source types and interfaces for RAG indexing
 
+export type SourceType = 'file' | 'url';
+
 export interface IndexableDocument {
   /** Unique identifier for the document (file path, URL, etc.) */
   sourceUri: string;
   /** Type of source this document comes from */
-  sourceType: 'file' | 'url' | 'github';
+  sourceType: SourceType;
   /** Raw content of the document */
   content: string;
   /** SHA256 hash of the content for change detection */
@@ -37,9 +39,9 @@ export interface DataSourceOptions {
 }
 
 export abstract class DataSource {
-  protected sourceType: 'file' | 'url' | 'github';
+  protected sourceType: SourceType;
 
-  constructor(sourceType: 'file' | 'url' | 'github') {
+  constructor(sourceType: SourceType) {
     this.sourceType = sourceType;
   }
 
@@ -53,7 +55,7 @@ export abstract class DataSource {
   /**
    * Get the source type for this data source
    */
-  getSourceType(): 'file' | 'url' | 'github' {
+  getSourceType(): SourceType {
     return this.sourceType;
   }
 

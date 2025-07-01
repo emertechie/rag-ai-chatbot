@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
 import { resource, resourceChunk } from '../lib/db/schema.js';
-import type { DocumentChunk, Embedding } from './types.js';
+import type { DocumentChunk, Embedding, SourceType } from './types.js';
 
 // Create database connection
 // biome-ignore lint: Forbidden non-null assertion.
@@ -24,7 +24,7 @@ export async function createResource({
   sourceUri,
   contentHash,
 }: {
-  sourceType: 'file' | 'url' | 'github';
+  sourceType: SourceType;
   sourceUri: string;
   contentHash: string;
 }) {
@@ -105,7 +105,7 @@ export async function deleteResourceChunksByResourceId(resourceId: string) {
   }
 }
 
-export async function getResourcesBySourceType(sourceType: 'file' | 'url' | 'github') {
+export async function getResourcesBySourceType(sourceType: SourceType) {
   try {
     return await db.select().from(resource).where(eq(resource.sourceType, sourceType));
   } catch (error) {

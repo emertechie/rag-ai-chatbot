@@ -5,13 +5,11 @@ import { config } from 'dotenv';
 import process from 'node:process';
 import { 
   FileSystemDataSource, 
-  URLDataSource, 
-  GitHubDataSource,
+  URLDataSource,
   type FileSystemOptions,
-  type URLOptions,
-  type GitHubOptions
+  type URLOptions
 } from './data-sources/index.js';
-import type { DataSource, IndexableDocument } from './types.js';
+import type { DataSource, IndexableDocument, SourceType } from './types.js';
 import {
   splitDocumentIntoChunks,
   generateEmbeddingsBatch,
@@ -33,7 +31,6 @@ config();
 interface IndexerOptions {
   path?: string;
   url?: string;
-  repoUrl?: string;
   // URL data source specific options
   maxFiles?: number;
   delay?: number;
@@ -50,20 +47,19 @@ async function main() {
   program
     .option('--path <directory>', 'Index local directory containing .md and .mdx files')
     .option('--url <url>', 'Index URL pointing to llms.txt file')
-    .option('--repo-url <github_url>', 'Index GitHub repository (placeholder for future implementation)')
     .option('--max-files <number>', 'Maximum number of files to process from URL source (default: process all)', (value) => parseInt(value, 10))
     .option('--delay <number>', 'Delay between requests in milliseconds for URL source (default: 250)', (value) => parseInt(value, 10))
     .action(async (options: IndexerOptions) => {
       // Validate mutually exclusive options
-      const optionCount = [options.path, options.url, options.repoUrl].filter(Boolean).length;
+      const optionCount = [options.path, options.url].filter(Boolean).length;
       
       if (optionCount === 0) {
-        console.error('Error: Must provide one of --path, --url, or --repo-url');
+        console.error('Error: Must provide one of --path or --url');
         process.exit(1);
       }
       
       if (optionCount > 1) {
-        console.error('Error: Options --path, --url, and --repo-url are mutually exclusive');
+        console.error('Error: Options --path and --url are mutually exclusive');
         process.exit(1);
       }
 
@@ -106,9 +102,6 @@ async function main() {
           }
           
           dataSource = new URLDataSource(urlOptions);
-        } else if (options.repoUrl) {
-          console.log(`📁 Starting indexing for GitHub repository: ${options.repoUrl}`);
-          dataSource = new GitHubDataSource({ repoUrl: options.repoUrl } as GitHubOptions);
         } else {
           throw new Error('No valid data source provided');
         }
@@ -254,7 +247,7 @@ async function processDocument(document: IndexableDocument): Promise<boolean> {
 /**
  * Handle deletion of documents that no longer exist in the data source
  */
-async function handleDocumentDeletion(sourceType: 'file' | 'url' | 'github', discoveredUris: Set<string>): Promise<void> {
+async function handleDocumentDeletion(sourceType: SourceType, discoveredUris: Set<string>): Promise<void> {
   console.log('🗑️  Checking for deleted documents...');
   
   // Get all existing resources of this source type
