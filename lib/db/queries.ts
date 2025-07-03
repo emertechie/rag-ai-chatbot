@@ -44,9 +44,19 @@ import { ChatSDKError } from '../errors';
 
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+const dbClient = drizzle(client);
 
-export async function getUser(email: string): Promise<Array<User>> {
+type DatabaseConnection = typeof dbClient;
+export type TransactionType = Parameters<Parameters<DatabaseConnection['transaction']>[0]>[0];
+
+export async function transaction<T>(callback: (tx: TransactionType) => Promise<T>) {
+  return await dbClient.transaction(async (tx: TransactionType) => {
+    return await callback(tx);
+  });
+}
+
+export async function getUser(email: string, txn?: DatabaseConnection): Promise<Array<User>> {
+  const db = txn || dbClient;
   try {
     return await db.select().from(user).where(eq(user.email, email));
   } catch (error) {
@@ -57,7 +67,8 @@ export async function getUser(email: string): Promise<Array<User>> {
   }
 }
 
-export async function createUser(email: string, password: string) {
+export async function createUser(email: string, password: string, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   const hashedPassword = generateHashedPassword(password);
 
   try {
@@ -67,7 +78,8 @@ export async function createUser(email: string, password: string) {
   }
 }
 
-export async function createGuestUser() {
+export async function createGuestUser(txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   const email = `guest-${Date.now()}`;
   const password = generateHashedPassword(generateUUID());
 
@@ -94,7 +106,8 @@ export async function saveChat({
   userId: string;
   title: string;
   visibility: VisibilityType;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db.insert(chat).values({
       id,
@@ -108,7 +121,8 @@ export async function saveChat({
   }
 }
 
-export async function deleteChatById({ id }: { id: string }) {
+export async function deleteChatById({ id }: { id: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     await db.delete(vote).where(eq(vote.chatId, id));
     await db.delete(message).where(eq(message.chatId, id));
@@ -137,7 +151,8 @@ export async function getChatsByUserId({
   limit: number;
   startingAfter: string | null;
   endingBefore: string | null;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const extendedLimit = limit + 1;
 
@@ -203,7 +218,8 @@ export async function getChatsByUserId({
   }
 }
 
-export async function getChatById({ id }: { id: string }) {
+export async function getChatById({ id }: { id: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
     return selectedChat;
@@ -216,7 +232,8 @@ export async function saveMessages({
   messages,
 }: {
   messages: Array<DBMessage>;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db.insert(message).values(messages);
   } catch (error) {
@@ -224,7 +241,8 @@ export async function saveMessages({
   }
 }
 
-export async function getMessagesByChatId({ id }: { id: string }) {
+export async function getMessagesByChatId({ id }: { id: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db
       .select()
@@ -247,7 +265,8 @@ export async function voteMessage({
   chatId: string;
   messageId: string;
   type: 'up' | 'down';
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const [existingVote] = await db
       .select()
@@ -270,7 +289,8 @@ export async function voteMessage({
   }
 }
 
-export async function getVotesByChatId({ id }: { id: string }) {
+export async function getVotesByChatId({ id }: { id: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db.select().from(vote).where(eq(vote.chatId, id));
   } catch (error) {
@@ -293,7 +313,8 @@ export async function saveDocument({
   kind: ArtifactKind;
   content: string;
   userId: string;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db
       .insert(document)
@@ -311,7 +332,8 @@ export async function saveDocument({
   }
 }
 
-export async function getDocumentsById({ id }: { id: string }) {
+export async function getDocumentsById({ id }: { id: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const documents = await db
       .select()
@@ -328,7 +350,8 @@ export async function getDocumentsById({ id }: { id: string }) {
   }
 }
 
-export async function getDocumentById({ id }: { id: string }) {
+export async function getDocumentById({ id }: { id: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const [selectedDocument] = await db
       .select()
@@ -351,7 +374,8 @@ export async function deleteDocumentsByIdAfterTimestamp({
 }: {
   id: string;
   timestamp: Date;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     await db
       .delete(suggestion)
@@ -378,7 +402,8 @@ export async function saveSuggestions({
   suggestions,
 }: {
   suggestions: Array<Suggestion>;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db.insert(suggestion).values(suggestions);
   } catch (error) {
@@ -393,7 +418,8 @@ export async function getSuggestionsByDocumentId({
   documentId,
 }: {
   documentId: string;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db
       .select()
@@ -407,7 +433,8 @@ export async function getSuggestionsByDocumentId({
   }
 }
 
-export async function getMessageById({ id }: { id: string }) {
+export async function getMessageById({ id }: { id: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db.select().from(message).where(eq(message.id, id));
   } catch (error) {
@@ -424,7 +451,8 @@ export async function deleteMessagesByChatIdAfterTimestamp({
 }: {
   chatId: string;
   timestamp: Date;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const messagesToDelete = await db
       .select({ id: message.id })
@@ -462,7 +490,8 @@ export async function updateChatVisiblityById({
 }: {
   chatId: string;
   visibility: 'private' | 'public';
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (error) {
@@ -476,7 +505,8 @@ export async function updateChatVisiblityById({
 export async function getMessageCountByUserId({
   id,
   differenceInHours,
-}: { id: string; differenceInHours: number }) {
+}: { id: string; differenceInHours: number }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const twentyFourHoursAgo = new Date(
       Date.now() - differenceInHours * 60 * 60 * 1000,
@@ -510,7 +540,8 @@ export async function createStreamId({
 }: {
   streamId: string;
   chatId: string;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     await db
       .insert(stream)
@@ -523,7 +554,8 @@ export async function createStreamId({
   }
 }
 
-export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
+export async function getStreamIdsByChatId({ chatId }: { chatId: string }, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const streamIds = await db
       .select({ id: stream.id })
@@ -550,7 +582,8 @@ export async function searchSimilarChunks({
   embedding: number[];
   limit?: number;
   threshold?: number;
-}) {
+}, txn?: DatabaseConnection) {
+  const db = txn || dbClient;
   try {
     const similarity = sql<number>`1 - (${cosineDistance(resourceChunk.embedding, embedding)})`;
     

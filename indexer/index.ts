@@ -16,6 +16,7 @@ import {
   shouldReindexDocument,
 } from './utils.js';
 import {
+  transaction,
   getResourceBySourceUri,
   createResource,
   updateResourceContentHash,
@@ -210,34 +211,38 @@ async function processDocument(document: IndexableDocument): Promise<boolean> {
     // Update existing resource
     console.log(`   💾 Updating existing resource in database...`);
     
-    // Delete existing chunks
-    await deleteResourceChunksByResourceId(existingResource.id);
-    
-    // Update resource content hash
-    await updateResourceContentHash({
-      id: existingResource.id,
-      contentHash: document.contentHash,
-    });
-    
-    // Create new chunks
-    await createResourceChunks({
-      resourceId: existingResource.id,
-      chunksWithEmbeddings,
+    await transaction(async (txn) => {
+      // Delete existing chunks
+      await deleteResourceChunksByResourceId(existingResource.id, txn);
+      
+      // Update resource content hash
+      await updateResourceContentHash({
+        id: existingResource.id,
+        contentHash: document.contentHash,
+      }, txn);
+      
+      // Create new chunks
+      await createResourceChunks({
+        resourceId: existingResource.id,
+        chunksWithEmbeddings,
+      }, txn);
     });
   } else {
     // Create new resource
     console.log(`   💾 Creating new resource in database...`);
     
-    const newResource = await createResource({
-      sourceType: document.sourceType,
-      sourceUri: document.sourceUri,
-      contentHash: document.contentHash,
-    });
-    
-    // Create chunks
-    await createResourceChunks({
-      resourceId: newResource.id,
-      chunksWithEmbeddings,
+    await transaction(async (txn) => {
+      const newResource = await createResource({
+        sourceType: document.sourceType,
+        sourceUri: document.sourceUri,
+        contentHash: document.contentHash,
+      }, txn);
+      
+      // Create chunks
+      await createResourceChunks({
+        resourceId: newResource.id,
+        chunksWithEmbeddings,
+      }, txn);
     });
   }
 

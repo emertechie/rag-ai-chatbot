@@ -7,9 +7,19 @@ import type { DocumentChunk, Embedding, SourceType } from './types.js';
 // Create database connection
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+const dbClient = drizzle(client);
 
-export async function getResourceBySourceUri(sourceUri: string) {
+type DatabaseConnection = typeof dbClient;
+export type TransactionType = Parameters<Parameters<DatabaseConnection['transaction']>[0]>[0];
+
+export async function transaction<T>(callback: (tx: TransactionType) => Promise<T>) {
+  return await dbClient.transaction(async (tx: TransactionType) => {
+    return await callback(tx);
+  });
+}
+
+export async function getResourceBySourceUri(sourceUri: string, txn?: TransactionType) {
+  const db = txn || dbClient;
   try {
     const results = await db.select().from(resource).where(eq(resource.sourceUri, sourceUri));
     return results[0] || null;
@@ -27,7 +37,8 @@ export async function createResource({
   sourceType: SourceType;
   sourceUri: string;
   contentHash: string;
-}) {
+}, txn?: TransactionType) {
+  const db = txn || dbClient;
   try {
     const results = await db.insert(resource).values({
       sourceType,
@@ -49,7 +60,8 @@ export async function updateResourceContentHash({
 }: {
   id: string;
   contentHash: string;
-}) {
+}, txn?: TransactionType) {
+  const db = txn || dbClient;
   try {
     const results = await db.update(resource)
       .set({ 
@@ -65,7 +77,8 @@ export async function updateResourceContentHash({
   }
 }
 
-export async function deleteResource(id: string) {
+export async function deleteResource(id: string, txn?: TransactionType) {
+  const db = txn || dbClient;
   try {
     // ResourceChunks will be deleted automatically due to cascade delete
     await db.delete(resource).where(eq(resource.id, id));
@@ -81,7 +94,8 @@ export async function createResourceChunks({
 }: {
   resourceId: string;
   chunksWithEmbeddings: [DocumentChunk, Embedding][];
-}) {
+}, txn?: TransactionType) {
+  const db = txn || dbClient;
   try {
     const chunkValues = chunksWithEmbeddings.map(([chunk, embedding]) => ({
       resourceId,
@@ -96,7 +110,8 @@ export async function createResourceChunks({
   }
 }
 
-export async function deleteResourceChunksByResourceId(resourceId: string) {
+export async function deleteResourceChunksByResourceId(resourceId: string, txn?: TransactionType) {
+  const db = txn || dbClient;
   try {
     await db.delete(resourceChunk).where(eq(resourceChunk.resourceId, resourceId));
   } catch (error) {
@@ -105,7 +120,8 @@ export async function deleteResourceChunksByResourceId(resourceId: string) {
   }
 }
 
-export async function getResourcesBySourceType(sourceType: SourceType) {
+export async function getResourcesBySourceType(sourceType: SourceType, txn?: TransactionType) {
+  const db = txn || dbClient;
   try {
     return await db.select().from(resource).where(eq(resource.sourceType, sourceType));
   } catch (error) {
