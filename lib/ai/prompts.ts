@@ -37,6 +37,7 @@ export const regularPrompt =
    You can ONLY answer using knowledge you get from the tools you have access to.
    DO NOT RELY ON YOUR OWN KNOWLEDGE TO ANSWER THE QUESTION.
    If you cannot answer the question, say "I'm sorry, I don't know the answer to that". No exceptions.
+   If linking to a document returned from the \`searchKnowledge\` tool, remove any '.md' extension from the link (That will link to a human-readable version).
    Keep your responses concise and helpful.`;
 
 export interface RequestHints {
