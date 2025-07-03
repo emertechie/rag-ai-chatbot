@@ -40,6 +40,6 @@ export const myProvider = isTestEnvironment
         'small-model': openai.image('dall-e-3'),
       },
       textEmbeddingModels: {
-        'embedding-model': openai.textEmbeddingModel('text-embedding-ada-002'),
+        'embedding-model': openai.textEmbeddingModel('text-embedding-3-small'),
       }
     });
