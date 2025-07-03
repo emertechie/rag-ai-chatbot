@@ -1,19 +1,49 @@
 # RAG AI Chatbot
 
-This is a forked and customized version of the excellent [vercel/ai-chatbot](https://github.com/vercel/ai-chatbot) repo.
+This is a forked and customized version of the [vercel/ai-chatbot](https://github.com/vercel/ai-chatbot) repo.
 
 It extends the original chatbot with support for RAG (Retrieval-Augmented Generation). Changes include:
 
 * CLI-based document indexer with support for file system and llms.txt-based indexing. Full source in the [`/indexer`](https://github.com/emertechie/rag-ai-chatbot/tree/main/indexer) folder.
 * Database migrations and query support for indexed documents and their chunked encodings
 * A custom AI tool to enable the chatbot to search knowledge in the database tables
-* A customized system prompt to ensure the chatbot only uses knowledge from the database to reply, to avoid hallucinations
+* Customized system prompt to ensure the chatbot only uses knowledge from the database to reply, to avoid hallucinations
 * A custom UI component to display information sources
 * Instrumentation integration with [Langfuse](https://langfuse.com/)
 
-I also included, as a reference, the main [prompts](https://github.com/emertechie/rag-ai-chatbot/tree/main/.prompts) I used in Cursor to generate the changes. These make use of the [snarktank/ai-dev-tasks](https://github.com/snarktank/ai-dev-tasks) repo to help create PRDs and task lists.
-
 Full diff of my changes available [here](https://github.com/vercel/ai-chatbot/compare/main...emertechie:rag-ai-chatbot:main).
+
+As a reference, I also included the main [prompts](https://github.com/emertechie/rag-ai-chatbot/tree/main/.prompts) I used in Cursor to generate the changes. These make use of the [snarktank/ai-dev-tasks](https://github.com/snarktank/ai-dev-tasks) repo to help create PRDs and task lists.
+
+## RAG Indexer CLI
+
+Run the `indexer/index.ts` script to fetch and index Markdown documents. See usage instructions below. 
+
+Environment variables can optionally be passed with the `--env-file` parameter pointing to a `.env.local` file. See the `.env.example` file for the expected variables.
+
+### llms.txt
+
+Use the `--url` parameter with an [`llms.txt`](https://llmstxt.org/) file link to index all Mardown documents included in the file. Currently, that's the only type of URL supported.
+
+```bash
+npx tsx --env-file=.env.local indexer/index.ts --url <link-to-llms.txt> [--delay <number>] [--max-files <number>]
+```
+
+**Optional parameters**
+
+- `delay`: Number of milliseconds of delay between fetch requests. Default: `250`
+- `max-files`: Number of files to fetch and process. Default: `undefined` (fetch and process all files)
+
+
+### Local directory
+
+Use the `--path` parameter to index all `.md` or `.mdx` files recursively from a local directory.
+
+```bash
+npx tsx --env-file=.env.local indexer/index.ts --path <directory>
+```
+
+----
 
 Original Chat SDK Readme content below.
 
