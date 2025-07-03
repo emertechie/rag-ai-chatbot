@@ -15,7 +15,7 @@ Full diff of my changes available [here](https://github.com/vercel/ai-chatbot/co
 
 As a reference, I also included the main [prompts](https://github.com/emertechie/rag-ai-chatbot/tree/main/.prompts) I used in Cursor to generate the changes. These make use of the [snarktank/ai-dev-tasks](https://github.com/snarktank/ai-dev-tasks) repo to help create PRDs and task lists.
 
-## RAG Indexer CLI
+## RAG Indexer
 
 Run the `indexer/index.ts` script to fetch and index Markdown documents. See usage instructions below. 
 
@@ -45,9 +45,9 @@ npx tsx --env-file=.env.local indexer/index.ts --path <directory>
 
 ----
 
-Original Chat SDK Readme content below.
+Follow the Original Chat SDK Readme content below to run the chatbot, which will answer queries using the information indexed by the [Indexer](#rag-indexer) command line tool.
 
-<hr>
+----
 
 <!--
 <a href="https://chat.vercel.ai/">
