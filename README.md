@@ -9,13 +9,10 @@ It extends the original chatbot with support for RAG (Retrieval-Augmented Genera
 * A custom AI tool to enable the chatbot to search knowledge in the database tables
 * Customized system prompt to ensure the chatbot only uses knowledge from the database to reply, to avoid hallucinations
 * A custom UI component to display information sources
-* Instrumentation integration with [Langfuse](https://langfuse.com/)
 
 Full diff of my changes available [here](https://github.com/vercel/ai-chatbot/compare/main...emertechie:rag-ai-chatbot:main).
 
-As a reference, I also included the main [prompts](https://github.com/emertechie/rag-ai-chatbot/tree/main/.prompts) I used in Cursor to generate the changes. These make use of the [snarktank/ai-dev-tasks](https://github.com/snarktank/ai-dev-tasks) repo to help create PRDs and task lists.
-
-## RAG Indexer
+## Document indexer
 
 Run the `indexer/index.ts` script to fetch and index Markdown documents. See usage instructions below. 
 
@@ -45,7 +42,7 @@ npx tsx --env-file=.env.local indexer/index.ts --path <directory>
 
 ----
 
-Follow the Original Chat SDK Readme content below to run the chatbot, which will answer queries using the information indexed by the [Indexer](#rag-indexer) command line tool.
+The original Chat SDK Readme content is below with instructions on how to run the chatbot.
 
 ----
 
