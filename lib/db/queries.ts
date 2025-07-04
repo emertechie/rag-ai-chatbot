@@ -577,7 +577,7 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }, txn?:
 export async function searchSimilarChunks({
   embedding,
   limit = 5,
-  threshold = 0.75,
+  threshold = 0.6,
 }: {
   embedding: number[];
   limit?: number;

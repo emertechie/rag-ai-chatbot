@@ -46,7 +46,7 @@ export abstract class DataSource {
   }
 
   /**
-   * Discover indexable documents from this data source using a generator
+   * Discover indexable documents from this data source
    * @param options Configuration options for discovery
    * @returns AsyncGenerator that yields indexable documents one by one
    */
